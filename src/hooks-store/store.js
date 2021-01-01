@@ -1,14 +1,18 @@
 import {useEffect, useState} from 'react';
 
+// global objects are defined outside the hook !!!!!
+///That's important !!
+// Means that every component that uses the hook SHARES the same values !!
+
 let globalState = {};
 let listeners = [];
 let actions = {};
 
-export const useStore = () => {
+export const useStore = (shouldListen = true) => {
     const setState = useState(globalState)[1];
 
-    const dispatch = actionIdentifier => {
-        const newState = actions[actionIdentifier](globalState)
+    const dispatch = (actionIdentifier, payload) => {
+        const newState = actions[actionIdentifier](globalState, payload)
         globalState = {...globalState, ...newState};
 
         for (const listener of listeners){
@@ -17,11 +21,15 @@ export const useStore = () => {
     };
 
     useEffect(()=> {
-        listeners.push(setState);
-        return () => {
-            listeners = listeners.filter(li => li !== setState);
+        if( shouldListen){
+            listeners.push(setState);
         }
-    }, [setState]);
+        return () => {
+            if(shouldListen){
+                listeners = listeners.filter(li => li !== setState);
+            }
+        }
+    }, [setState, shouldListen]);
 
     return [globalState, dispatch];
     
